@@ -18,7 +18,7 @@ export const cleanObject = (obj: { [key: string]: unknown }) => {
 // Custom Hook
 export const useMount = (callback: () => void) => {
   useEffect(() => {
-    callback()    
+    callback()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }
@@ -47,4 +47,17 @@ export const useArray = <T>(initialArray: T[]) => {
       setValue(copy)
     }
   }
+}
+
+export const useDocumentTitle = (title: string, keepOnUnmount: boolean = true) => {
+  const oldTitle = document.title
+  useEffect(() => {
+    document.title = title
+  }, [title])
+
+  useEffect(() => {
+    return () => {
+      if (!keepOnUnmount) document.title = oldTitle
+    }
+  }, [])
 }
