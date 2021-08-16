@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { LoginScreen } from "./login"
 import { RegisterScreen } from "./register"
-import { Card, Divider, Button } from 'antd'
+import { Card, Divider, Button, Typography } from 'antd'
 import styled from '@emotion/styled'
 import logo from 'assets/logo.svg'
 import left from 'assets/left.jpg'
@@ -10,16 +10,15 @@ import right from 'assets/right.jpg'
 export const UnauthenticatedApp = () => {
   // 默认登录页
   const [isRegister, setIsRegister] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
   return <Container>
     <Header />
     <Background />
     <ShadowCard>
-      <Title>
-        {isRegister ? '请注册' : '请登录'}
-      </Title>
-      {
-        isRegister ? <RegisterScreen /> : <LoginScreen />
-      }
+      <Title>{isRegister ? '请注册' : '请登录'}</Title>
+      {error ? <Typography.Text type={'danger'}>{error.message}</Typography.Text> : null}
+      {/* 当RegisterScreen或LoginScreen中抛出错误时，error才有值 */}
+      {isRegister ? <RegisterScreen onError={setError} /> : <LoginScreen onError={setError} />}
       <Divider />
       <Button onClick={() => setIsRegister(!isRegister)}>
         {isRegister ? '已经有账号了？直接登录' : '没有账号？注册新账号'}
