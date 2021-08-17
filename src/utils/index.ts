@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 // 排除value为0的情况
 export const isFalsy = (value: unknown) => value === 0 ? false : !value
@@ -50,14 +50,22 @@ export const useArray = <T>(initialArray: T[]) => {
 }
 
 export const useDocumentTitle = (title: string, keepOnUnmount: boolean = true) => {
-  const oldTitle = document.title
+  // 因为这种写法的oldTitle始终会是最新的值，就没法保留初始化的值了
+  // 所以要采用useRef().current，它在这个组件的生命周期中都不会变化
+  // const oldTitle = document.title
+  const oldTitle = useRef(document.title).current // 帮助持久化变量
+  // 页面加载时：旧title
+  // 加载后：新title
   useEffect(() => {
     document.title = title
   }, [title])
 
   useEffect(() => {
     return () => {
-      if (!keepOnUnmount) document.title = oldTitle
+      if (!keepOnUnmount) {
+        // 如果不指定依赖，读到的就是旧title
+        document.title = oldTitle
+      }
     }
-  }, [])
+  }, [keepOnUnmount, oldTitle])
 }
