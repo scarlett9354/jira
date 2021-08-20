@@ -5,9 +5,10 @@ import { ReactComponent as SoftwareLogo } from 'assets/logo.svg'
 import styled from "@emotion/styled";
 import { Row } from "components/lib";
 import { Button, Dropdown, Menu } from "antd";
-import { Route, Routes } from "react-router";
+import { Navigate, Route, Routes } from "react-router";
 import { BrowserRouter as Router } from 'react-router-dom'
 import { ProjectScreen } from "screens/project";
+import { resetRoute } from "utils";
 
 export const AuthenticatedApp = () => {
   return <Container>
@@ -17,6 +18,8 @@ export const AuthenticatedApp = () => {
         <Routes>
           <Route path={'/projects'} element={<ProjectListScreen />}></Route>
           <Route path={'/projects/:projectId/*'} element={<ProjectScreen />}></Route>
+          {/* 匹配不到上面两个路由(比如http://localhost:3000/)，就自动打开projects */}
+          <Navigate to={'/projects'} />
         </Routes>
       </Router>
     </Main>
@@ -27,7 +30,9 @@ const PageHeader = () => {
   const { logout, user } = useAuth()
   return <Header between>
     <HeaderLeft gap>
-      <SoftwareLogo width={'6rem'} color={'rgb(38,132,255)'} />
+      <Button type={'link'} onClick={resetRoute}>
+        <SoftwareLogo width={'6rem'} color={'rgb(38,132,255)'} />
+      </Button>
       <h2>项目</h2>
       <h2>用户</h2>
     </HeaderLeft>
