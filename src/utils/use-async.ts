@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import { useMountedRef } from "utils"
 
 interface State<D> {
@@ -30,21 +30,21 @@ export const useAsync = <D>(initialState?: State<D>, initialConfig?: typeof defa
   const [retry, setRetry] = useState(() => () => { })
 
   // 请求成功
-  const setData = (data: D) => setState({
+  const setData = useCallback((data: D) => setState({
     data,
     stat: 'success',
     error: null
-  })
+  }), [])
 
   // 请求失败
-  const setError = (error: Error) => setState({
+  const setError = useCallback((error: Error) => setState({
     error,
     stat: 'error',
     data: null
-  })
+  }), [])
 
   // run用来触发异步请求
-  const run = (promise: Promise<D>, runConfig?: { retry: () => Promise<D> }) => {
+  const run = useCallback((promise: Promise<D>, runConfig?: { retry: () => Promise<D> }) => {
     if (!promise || !promise.then) {
       // 会打断一切进程
       throw new Error('请传入 Promise 类型数据')
@@ -54,7 +54,7 @@ export const useAsync = <D>(initialState?: State<D>, initialConfig?: typeof defa
         run(runConfig?.retry(), runConfig)
       }
     })
-    setState({ ...state, stat: 'loading' })
+    setState(prevState => ({ ...prevState, stat: 'loading' }))
     return promise.then(data => {
       // 如果为true，说明组件已经被挂载而不是被卸载的状态，在这个时候才设置data
       if (mountedRef.current)
@@ -66,7 +66,7 @@ export const useAsync = <D>(initialState?: State<D>, initialConfig?: typeof defa
       if (config.throwOnError) return Promise.reject(error)
       return error
     })
-  }
+  }, [config.throwOnError, mountedRef, setData, setError])
   return {
     isIdle: state.stat === 'idle',
     isLoading: state.stat === 'loading',
