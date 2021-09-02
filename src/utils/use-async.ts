@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useMountedRef } from "utils"
 
 interface State<D> {
   error: Error | null
@@ -23,6 +24,8 @@ export const useAsync = <D>(initialState?: State<D>, initialConfig?: typeof defa
     ...defaultInitialState,
     ...initialState
   })
+
+  const mountedRef = useMountedRef()
 
   const [retry, setRetry] = useState(() => () => { })
 
@@ -53,7 +56,9 @@ export const useAsync = <D>(initialState?: State<D>, initialConfig?: typeof defa
     })
     setState({ ...state, stat: 'loading' })
     return promise.then(data => {
-      setData(data)
+      // 如果为true，说明组件已经被挂载而不是被卸载的状态，在这个时候才设置data
+      if (mountedRef.current)
+        setData(data)
       return data
     }).catch(error => {
       // catch会消化异常，如果不主动抛出，外面是接收不到异常的
