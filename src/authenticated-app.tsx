@@ -1,40 +1,47 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "context/auth-context";
 import { ProjectListScreen } from "screens/project-list";
 import { ReactComponent as SoftwareLogo } from 'assets/logo.svg'
 import styled from "@emotion/styled";
-import { Row } from "components/lib";
+import { ButtonNoPadding, Row } from "components/lib";
 import { Button, Dropdown, Menu } from "antd";
 import { Navigate, Route, Routes } from "react-router";
 import { BrowserRouter as Router } from 'react-router-dom'
 import { ProjectScreen } from "screens/project";
 import { resetRoute } from "utils";
+import { ProjectModal } from "screens/project-list/project-modal";
+import { ProjectPopover } from "components/project-popover";
 
 export const AuthenticatedApp = () => {
+  const [projectModalOpen, setProjectModalOpen] = useState(false)
   return <Container>
-    <PageHeader />
+    <PageHeader setProjectModalOpen={setProjectModalOpen} />
     <Main>
       <Router>
         <Routes>
-          <Route path={'/projects'} element={<ProjectListScreen />}></Route>
-          <Route path={'/projects/:projectId/*'} element={<ProjectScreen />}></Route>
+          <Route
+            path={'/projects'}
+            element={<ProjectListScreen setProjectModalOpen={setProjectModalOpen} />}
+          />
+          <Route path={'/projects/:projectId/*'} element={<ProjectScreen />} />
           {/* 匹配不到上面两个路由(比如http://localhost:3000/)，就自动打开projects */}
           <Navigate to={'/projects'} />
         </Routes>
       </Router>
     </Main>
+    <ProjectModal projectModalOpen={projectModalOpen} onClose={() => setProjectModalOpen(false)} />
   </Container>
 }
 
-const PageHeader = () => {
+const PageHeader = (props: { setProjectModalOpen: (isOpen: boolean) => void }) => {
   const { logout, user } = useAuth()
   return <Header between>
     <HeaderLeft gap>
-      <Button type={'link'} onClick={resetRoute}>
+      <ButtonNoPadding type={'link'} onClick={resetRoute}>
         <SoftwareLogo width={'6rem'} color={'rgb(38,132,255)'} />
-      </Button>
-      <h2>项目</h2>
-      <h2>用户</h2>
+      </ButtonNoPadding>
+      <ProjectPopover setProjectModalOpen={props.setProjectModalOpen} />
+      <span>用户</span>
     </HeaderLeft>
     <HeaderRight>
       <Dropdown overlay={<Menu>

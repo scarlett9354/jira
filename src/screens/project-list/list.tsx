@@ -1,6 +1,6 @@
 import React from "react"
 import { User } from 'screens/project-list/search-panel'
-import { Table, TableProps } from 'antd'
+import { Dropdown, Menu, Table, TableProps } from 'antd'
 import dayjs from "dayjs"
 // react-router 和 react-router-dom的关系，类似于react 和 react-dom/react-native/react-vr...
 // react是一个核心的库，里面主要处理虚拟的、计算的、理论的逻辑，类似于在组件中的state、useEffect的状态怎么影响虚拟dom树，这次的虚拟dom树和上次的虚拟dom树中间的diff运算，都是在react中处理的
@@ -10,6 +10,7 @@ import dayjs from "dayjs"
 import { Link } from "react-router-dom"
 import { Pin } from "components/pin"
 import { useEditProject } from "utils/project"
+import { ButtonNoPadding } from "components/lib"
 
 export interface Project {
   id: number
@@ -22,7 +23,8 @@ export interface Project {
 
 interface ListProps extends TableProps<Project> {
   users: User[]
-  refresh?: () => void
+  refresh?: () => void,
+  setProjectModalOpen: (isOpen: boolean) => void
 }
 
 export const List = ({ users, ...props }: ListProps) => {
@@ -63,6 +65,19 @@ export const List = ({ users, ...props }: ListProps) => {
         return <span>
           {project.created ? dayjs(project.created).format('YYYY-MM-DD') : '无'}
         </span>
+      }
+    },
+    {
+      render(value, project) {
+        return <Dropdown overlay={<Menu>
+          <Menu.Item key={'edit'}>
+            <ButtonNoPadding type={'link'} onClick={() => props.setProjectModalOpen(true)}>
+              编辑
+            </ButtonNoPadding>
+          </Menu.Item>
+        </Menu>}>
+          <ButtonNoPadding type={'link'}>...</ButtonNoPadding>
+        </Dropdown>
       }
     }
   ]}
