@@ -15,13 +15,21 @@ import { ProjectPopover } from "components/project-popover";
 export const AuthenticatedApp = () => {
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   return <Container>
-    <PageHeader setProjectModalOpen={setProjectModalOpen} />
+    <PageHeader projectButton={
+      <ButtonNoPadding onClick={() => setProjectModalOpen(true)} type={'link'}>
+        创建项目
+      </ButtonNoPadding>
+    } />
     <Main>
       <Router>
         <Routes>
           <Route
             path={'/projects'}
-            element={<ProjectListScreen setProjectModalOpen={setProjectModalOpen} />}
+            element={<ProjectListScreen projectButton={
+              <ButtonNoPadding onClick={() => setProjectModalOpen(true)} type={'link'}>
+                创建项目
+              </ButtonNoPadding>
+            } />}
           />
           <Route path={'/projects/:projectId/*'} element={<ProjectScreen />} />
           {/* 匹配不到上面两个路由(比如http://localhost:3000/)，就自动打开projects */}
@@ -33,14 +41,14 @@ export const AuthenticatedApp = () => {
   </Container>
 }
 
-const PageHeader = (props: { setProjectModalOpen: (isOpen: boolean) => void }) => {
+const PageHeader = (props: { projectButton: JSX.Element }) => {
   const { logout, user } = useAuth()
   return <Header between>
     <HeaderLeft gap>
       <ButtonNoPadding type={'link'} onClick={resetRoute}>
         <SoftwareLogo width={'6rem'} color={'rgb(38,132,255)'} />
       </ButtonNoPadding>
-      <ProjectPopover setProjectModalOpen={props.setProjectModalOpen} />
+      <ProjectPopover {...props} />
       <span>用户</span>
     </HeaderLeft>
     <HeaderRight>
