@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react"
+import { useCallback, useReducer, useState } from "react"
 import { useMountedRef } from "utils"
 
 interface State<D> {
@@ -15,33 +15,40 @@ const defaultInitialState: State<null> = {
 const defaultConfig = {
   throwOnError: false
 }
+
+const useSafeDispatch = <T>(dispatch: (...args: T[]) => void) => {
+  const mountedRef = useMountedRef()
+  return useCallback((...args: T[]) => (mountedRef.current ? dispatch(...args) : void 0), [dispatch, mountedRef])
+}
+
 /**
  * @param initialState 用户传入的state，优先级比defaultInitialState高
  */
 export const useAsync = <D>(initialState?: State<D>, initialConfig?: typeof defaultConfig) => {
   const config = { ...defaultConfig, ...initialConfig }
-  const [state, setState] = useState<State<D>>({
+  const [state, dispatch] = useReducer((state: State<D>,
+    action: Partial<State<D>>) => ({ ...state, ...action }), {
     ...defaultInitialState,
     ...initialState
   })
 
-  const mountedRef = useMountedRef()
+  const safeDispatch = useSafeDispatch(dispatch)
 
   const [retry, setRetry] = useState(() => () => { })
 
   // 请求成功
-  const setData = useCallback((data: D) => setState({
+  const setData = useCallback((data: D) => safeDispatch({
     data,
     stat: 'success',
     error: null
-  }), [])
+  }), [safeDispatch])
 
   // 请求失败
-  const setError = useCallback((error: Error) => setState({
+  const setError = useCallback((error: Error) => safeDispatch({
     error,
     stat: 'error',
     data: null
-  }), [])
+  }), [safeDispatch])
 
   // run用来触发异步请求
   const run = useCallback((promise: Promise<D>, runConfig?: { retry: () => Promise<D> }) => {
@@ -54,11 +61,10 @@ export const useAsync = <D>(initialState?: State<D>, initialConfig?: typeof defa
         run(runConfig?.retry(), runConfig)
       }
     })
-    setState(prevState => ({ ...prevState, stat: 'loading' }))
+    safeDispatch({ stat: 'loading' })
     return promise.then(data => {
-      // 如果为true，说明组件已经被挂载而不是被卸载的状态，在这个时候才设置data
-      if (mountedRef.current)
-        setData(data)
+      // 这里的setData已经在上面safeDispatch了
+      setData(data)
       return data
     }).catch(error => {
       // catch会消化异常，如果不主动抛出，外面是接收不到异常的
@@ -66,7 +72,7 @@ export const useAsync = <D>(initialState?: State<D>, initialConfig?: typeof defa
       if (config.throwOnError) return Promise.reject(error)
       return error
     })
-  }, [config.throwOnError, mountedRef, setData, setError])
+  }, [config.throwOnError, setData, setError, safeDispatch])
   return {
     isIdle: state.stat === 'idle',
     isLoading: state.stat === 'loading',
