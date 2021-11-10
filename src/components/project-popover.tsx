@@ -8,7 +8,7 @@ import { ButtonNoPadding } from "./lib";
 
 export const ProjectPopover = () => {
   const dispatch = useDispatch()
-  const { data: projects, isLoading } = useProjects()
+  const { data: projects } = useProjects()
   const pinnedProjects = projects?.filter(project => project.pin)
   const content = <ContentContainer>
     <Typography.Text type={'secondary'}>收藏项目</Typography.Text>

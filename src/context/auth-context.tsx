@@ -1,18 +1,20 @@
-import React, { ReactNode } from "react"
+import React, { ReactNode, useCallback } from "react"
 import * as auth from 'auth-provider'
 import { User } from "screens/project-list/search-panel"
 import { http } from "utils/http"
 import { useMount } from "utils"
 import { useAsync } from "utils/use-async"
 import { FullPageErrorFallBack, FullPageLoading } from "components/lib"
+import * as authStore from "store/auth-slice"
+import { useDispatch, useSelector } from "react-redux"
 
-interface AuthForm {
+export interface AuthForm {
   username: string
   password: string
 }
 
 // 从localStorage读取我们存的token，用token获取user信息，并赋给setUser
-const bootstrapUser = async () => {
+export const bootstrapUser = async () => {
   let user = null
   const token = auth.getToken()
   if (token) {
@@ -22,25 +24,16 @@ const bootstrapUser = async () => {
   return user
 }
 
-const AuthContext = React.createContext<{
-  user: User | null
-  register: (form: AuthForm) => Promise<void>
-  login: (form: AuthForm) => Promise<void>
-  logout: () => Promise<void>
-} | undefined>(undefined)
-// 主要用户devtool中，项目实际应用中没有任何作用
-AuthContext.displayName = 'AuthContext'
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { data: user, error, isLoading, isIdle, isError, run, setData: setUser } = useAsync<User | null>()
-
+  const { error, isLoading, isIdle, isError, run } = useAsync<User | null>()
+  const dispatch: (...args: unknown[]) => Promise<User> = useDispatch()
   // 消参：point free
-  const login = (form: AuthForm) => auth.login(form).then(setUser)
-  const register = (form: AuthForm) => auth.register(form).then(setUser)
-  const logout = () => auth.logout().then(() => setUser(null))
+  // const login = (form: AuthForm) => auth.login(form).then(setUser)
+  // const register = (form: AuthForm) => auth.register(form).then(setUser)
+  // const logout = () => auth.logout().then(() => setUser(null))
 
   useMount(() => {
-    run(bootstrapUser())
+    run(dispatch(authStore.bootstrap()))
   })
 
   if (isIdle || isLoading) {
@@ -51,13 +44,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return <FullPageErrorFallBack error={error} />
   }
 
-  return <AuthContext.Provider children={children} value={{ user, login, register, logout }} />
+  return <div>{children}</div>
 }
 
 export const useAuth = () => {
-  const context = React.useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth必须在AuthProvider中使用')
+  const dispatch: (...args: unknown[]) => Promise<User> = useDispatch()
+  const user = useSelector(authStore.selectUser)
+  // 此处需要注意，当我们用自定义hook返回方法时，要给它加上useCallback
+  const login = useCallback((form: AuthForm) => dispatch(authStore.login(form)), [dispatch])
+  const register = useCallback((form: AuthForm) => dispatch(authStore.register(form)), [dispatch])
+  const logout = useCallback(() => dispatch(authStore.logout()), [dispatch])
+
+  return {
+    user, login, register, logout
   }
-  return context
 }
